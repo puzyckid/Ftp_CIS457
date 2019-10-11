@@ -17,7 +17,10 @@ public class ftp_client {
         int port = 0;
         final int maxFileSize = 1000000;
         Scanner scanner = new Scanner(System.in);
-        
+        System.out.print("Enter connect command to begin.\n" +
+                "CONNECT <address> <port>\n");
+
+
         while(scanner.hasNextLine()) {
             String command = scanner.nextLine();
             String[] components = command.split(" ", 0);
@@ -26,7 +29,8 @@ public class ftp_client {
                 socket = new Socket(ip, port); 
                 clientOut = socket.getOutputStream();
                 clientIn = socket.getInputStream();
-            } 
+            }
+            components[0] = components[0].toUpperCase();
             switch(components[0]) {
                 case "CONNECT":
                     if(connected){
@@ -54,6 +58,7 @@ public class ftp_client {
                     clientIn = null;
                     connected = false;
                     System.out.println("Connection closed.");
+                    System.exit(0);
                     break;
                 case "LIST": 
                     //write list command to OutputStream
@@ -70,39 +75,68 @@ public class ftp_client {
                     break;
 
                 case "RETRIEVE":
-                    //send command to server
-                    clientOut.write(command.getBytes());
-                    FileOutputStream fileOut = new FileOutputStream(components[1]);
-                    byte[] file = new byte[maxFileSize];
-                    
-                    //read from InputStream to the FileOutputStream
-                    //write only as many bits as we recieve, so 
-                    //the file does not take up more space than necessary
-                    int numR;
-                    while((numR = clientIn.read(file)) > 0) {
-                        fileOut.write(file, 0, numR);
+                    if(components.length > 1) {
+                        //send command to server
+                        clientOut.write(command.getBytes());
+                        FileOutputStream fileOut = new FileOutputStream(components[1]);
+                        byte[] file = new byte[maxFileSize];
+
+                        //read from InputStream to the FileOutputStream
+                        //write only as many bits as we recieve, so
+                        //the file does not take up more space than necessary
+                        int numR;
+                        while ((numR = clientIn.read(file)) > 0) {
+                            fileOut.write(file, 0, numR);
+                        }
+                        fileOut.close();
                     }
-                    fileOut.close();
+                    else{
+                        System.out.print("No file given.\n" +
+                                "Enter 'help' to see commands\n");
+                    }
                     break;
                 case "STORE":
-                    try { 
-                        //send command
-                        clientOut.write(command.getBytes());
-                        File send = new File(components[1]);
-                        InputStream in = new FileInputStream(send);
-                        byte[] bArr = new byte[(int)send.length()];
-                        //read from FileInputStream into bArr as many
-                        //bytes as the file contains.
-                        in.read(bArr, 0, (int)send.length());
-                        clientOut.write(bArr, 0, (int)send.length());
-                        clientIn.close();
-                        clientOut.close();
-                        socket.close();
-                    } catch(Exception e){e.printStackTrace();} 
-                    break; 
-             
+                    if(components.length > 1) {
+                        try {
+                            //send command
+                            clientOut.write(command.getBytes());
+                            File send = new File(components[1]);
+                            InputStream in = new FileInputStream(send);
+                            byte[] bArr = new byte[(int) send.length()];
+                            //read from FileInputStream into bArr as many
+                            //bytes as the file contains.
+                            in.read(bArr, 0, (int) send.length());
+                            clientOut.write(bArr, 0, (int) send.length());
+                            clientIn.close();
+                            clientOut.close();
+                            socket.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else{
+                        System.out.print("No file given.\n" +
+                                "Enter 'help' to see commands\n");
+                    }
+                    break;
+                case "HELP":
+                case "?":
+                case "H":
+                    System.out.print("---------HELP---------\n" +
+                            "LIST - list server files\n" +
+                            "STORE <filename> - send a file\n" +
+                            "RETRIEVE <filename> - retrieve a file\n" +
+                            "QUIT - end program\n" +
+                            "----------------------\n");
+                    break;
+                default:
+                    System.out.printf("%s - not a valid input.\n" +
+                            "Enter 'help' to see list of valid input\n",
+                            components[0]);
+            }
+            if(!components[0].equalsIgnoreCase("QUIT")){
+                System.out.print("Enter command to continue or 'help' to get started\n");
             }
         }
-        
     }
 }
