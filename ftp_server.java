@@ -54,18 +54,19 @@ public class ftp_server {
         private Socket socket;
         private InputStream input;            
         private OutputStream output;
+		private PrintStream printStream;
         final int maxFileSize = 1000000;
         ClientHandler(Socket socket) throws Exception {
             
             this.socket = socket;
             this.input = socket.getInputStream();
             this.output = socket.getOutputStream();
+			this.printStream = new PrintStream(this.output);
         }
         @Override
         public void run() {
             
             try { 
-                
                 System.out.println("Client connected: " + socket);
                 //read command into byte array
                 byte[] cmd = new byte[1024];
@@ -74,9 +75,9 @@ public class ftp_server {
                 command = command.trim();
                 String[] components = command.split(" ", 0);
                     
-                switch(components[0]) {
+                switch(components[0].toUpperCase()) {
                     case "LIST":
-
+						System.out.println(socket + ": List");
                         //gram an array of files from directory
                         File dir  = new File(System.getProperty("user.dir"));
                         File[] files = dir.listFiles();
@@ -93,19 +94,28 @@ public class ftp_server {
                         break;
 
                     case "RETRIEVE":
+						System.out.println(socket + ": Retrieve");
                         File send = new File(components[1]);
-                        InputStream in = new FileInputStream(send);
-                        byte[] bArr = new byte[(int)send.length()];
-                        //read from FileInputStream into bArr, only as many bytes
-                        //as the file contains
-                        in.read(bArr, 0, (int)send.length());
-                        //write the byte array to OutputStream
-                        output.write(bArr, 0, (int)send.length());
-                        input.close();
-                        output.close();
-                        socket.close();
-                        break;
+						if(!send.exists())
+						{
+							printStream.println(send + " does not exist in the server's current directory."); 		
+							printStream.close();
+							break;
+						}
+						InputStream in = new FileInputStream(send);
+						byte[] bArr = new byte[(int)send.length()];
+						//read from FileInputStream into bArr, only as many bytes
+						//as the file contains
+						in.read(bArr, 0, (int)send.length());
+						//write the byte array to OutputStream
+						output.write(bArr, 0, (int)send.length());
+						input.close();
+						output.close();
+						socket.close();					
+						break;
+						
                     case "STORE":
+						System.out.println(socket + ": Store");
                         FileOutputStream fileOut = new FileOutputStream(components[1]);
 
                         byte[] file = new byte[this.maxFileSize];
@@ -118,6 +128,7 @@ public class ftp_server {
 
                         break;
                     case "QUIT":
+						System.out.println(socket + ": Quit");
                         input.close();
                         output.close();
                         socket.close();

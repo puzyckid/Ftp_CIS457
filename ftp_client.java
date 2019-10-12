@@ -31,7 +31,7 @@ public class ftp_client {
                 clientIn = socket.getInputStream();
             }
             components[0] = components[0].toUpperCase();
-            switch(components[0]) {
+            switch(components[0].toUpperCase()) {
                 case "CONNECT":
                     if(connected){
                         System.out.println("We are already connected.");
@@ -97,19 +97,24 @@ public class ftp_client {
                     break;
                 case "STORE":
                     if(components.length > 1) {
-                        try {
+						File send = new File(components[1]);
+                        if (!send.exists())
+						{
+							System.out.println(send + " does not exist in the current directory.");
+							break;
+						}
+						try {
                             //send command
                             clientOut.write(command.getBytes());
-                            File send = new File(components[1]);
-                            InputStream in = new FileInputStream(send);
-                            byte[] bArr = new byte[(int) send.length()];
-                            //read from FileInputStream into bArr as many
-                            //bytes as the file contains.
-                            in.read(bArr, 0, (int) send.length());
-                            clientOut.write(bArr, 0, (int) send.length());
-                            clientIn.close();
-                            clientOut.close();
-                            socket.close();
+							InputStream in = new FileInputStream(send);
+							byte[] bArr = new byte[(int) send.length()];
+							//read from FileInputStream into bArr as many
+							//bytes as the file contains.
+							in.read(bArr, 0, (int) send.length());
+							clientOut.write(bArr, 0, (int) send.length());
+							clientIn.close();
+							clientOut.close();
+							socket.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -119,7 +124,7 @@ public class ftp_client {
                                 "Enter 'help' to see commands\n");
                     }
                     break;
-                case "HELP":
+                case "HELP":	
                 case "?":
                 case "H":
                     System.out.print("---------HELP---------\n" +
